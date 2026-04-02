@@ -8,6 +8,7 @@ import {
   ZoomOut,
   Type,
   Pen,
+  ImagePlus,
   Download,
   Home,
   Loader2,
@@ -39,9 +40,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignatureModal } from "@/components/signature-modal";
+import { ImageModal } from "@/components/image-modal";
 import { ExportModal } from "@/components/export-modal";
 import { TextElement } from "@/components/text-element";
 import { SignatureElement } from "@/components/signature-element";
+import { ImageElement } from "@/components/image-element";
 import { TextToolbar } from "@/components/text-toolbar";
 import {
   loadPdfDocument,
@@ -54,6 +57,7 @@ import { getStoredFile, getStoredFileName } from "@/lib/file-store";
 import type {
   TextElement as TextElementType,
   SignatureElement as SignatureElementType,
+  ImageElement as ImageElementType,
 } from "@shared/schema";
 
 export default function EditorPage() {
@@ -76,12 +80,15 @@ export default function EditorPage() {
   const [signatureElements, setSignatureElements] = useState<
     SignatureElementType[]
   >([]);
+  const [imageElements, setImageElements] = useState<ImageElementType[]>([]);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(
     null
   );
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
 
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
 
@@ -176,7 +183,30 @@ export default function EditorPage() {
     setSignatureElements((prev) => [...prev, newSignature]);
     setSelectedSignatureId(newSignature.id);
     setSelectedTextId(null);
+    setSelectedImageId(null);
   }, [currentPage]);
+
+  const handleAddImage = useCallback(
+    (imageData: string, naturalWidth: number, naturalHeight: number) => {
+      const defaultWidth = 200;
+      const aspect = naturalHeight / Math.max(naturalWidth, 1);
+      const defaultHeight = Math.round(defaultWidth * aspect);
+      const newImage: ImageElementType = {
+        id: generateId(),
+        imageData,
+        x: 100,
+        y: 150,
+        width: defaultWidth,
+        height: defaultHeight,
+        page: currentPage,
+      };
+      setImageElements((prev) => [...prev, newImage]);
+      setSelectedImageId(newImage.id);
+      setSelectedTextId(null);
+      setSelectedSignatureId(null);
+    },
+    [currentPage]
+  );
 
   const handleUpdateText = useCallback(
     (id: string, updates: Partial<TextElementType>) => {
@@ -199,11 +229,27 @@ export default function EditorPage() {
   const handleDeleteText = useCallback((id: string) => {
     setTextElements((prev) => prev.filter((el) => el.id !== id));
     setSelectedTextId(null);
+    setSelectedImageId(null);
   }, []);
 
   const handleDeleteSignature = useCallback((id: string) => {
     setSignatureElements((prev) => prev.filter((el) => el.id !== id));
     setSelectedSignatureId(null);
+    setSelectedImageId(null);
+  }, []);
+
+  const handleUpdateImage = useCallback(
+    (id: string, updates: Partial<ImageElementType>) => {
+      setImageElements((prev) =>
+        prev.map((el) => (el.id === id ? { ...el, ...updates } : el))
+      );
+    },
+    []
+  );
+
+  const handleDeleteImage = useCallback((id: string) => {
+    setImageElements((prev) => prev.filter((el) => el.id !== id));
+    setSelectedImageId(null);
   }, []);
 
   const handleExport = useCallback(
@@ -214,7 +260,8 @@ export default function EditorPage() {
         const pdfBytes = await exportPdfWithEdits(
           pdfFile,
           textElements,
-          signatureElements
+          signatureElements,
+          imageElements
         );
         downloadPdf(pdfBytes, exportFileName);
         toast({
@@ -232,13 +279,14 @@ export default function EditorPage() {
         throw error;
       }
     },
-    [pdfFile, textElements, signatureElements, toast]
+    [pdfFile, textElements, signatureElements, imageElements, toast]
   );
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setSelectedTextId(null);
       setSelectedSignatureId(null);
+      setSelectedImageId(null);
     }
   }, []);
 
@@ -246,6 +294,9 @@ export default function EditorPage() {
     (el) => el.page === currentPage
   );
   const currentPageSignatureElements = signatureElements.filter(
+    (el) => el.page === currentPage
+  );
+  const currentPageImageElements = imageElements.filter(
     (el) => el.page === currentPage
   );
 
@@ -301,6 +352,18 @@ export default function EditorPage() {
             <Pen className="h-5 w-5" />
             <span className="text-xs font-medium">Add Signature</span>
           </Button>
+          <Button
+            className="col-span-2 h-14 flex-col gap-2 bg-blue-500/10 hover:bg-blue-500/20 border-2 border-blue-400/40 text-blue-600 dark:text-blue-400"
+            variant="outline"
+            onClick={() => {
+              setShowImageModal(true);
+              setShowMobileTools(false);
+            }}
+            data-testid="button-add-image"
+          >
+            <ImagePlus className="h-5 w-5" />
+            <span className="text-xs font-medium">Add Image</span>
+          </Button>
         </div>
       </div>
 
@@ -329,9 +392,10 @@ export default function EditorPage() {
         </h3>
         <div className="space-y-1">
           {currentPageTextElements.length === 0 &&
-            currentPageSignatureElements.length === 0 && (
+            currentPageSignatureElements.length === 0 &&
+            currentPageImageElements.length === 0 && (
               <p className="text-xs text-muted-foreground italic py-2">
-                No elements on this page. Tap "Add Text" or "Add Signature" above to get started.
+                No elements on this page. Tap "Add Text", "Add Signature", or "Add Image" above to get started.
               </p>
             )}
           {currentPageTextElements.map((el) => (
@@ -345,6 +409,7 @@ export default function EditorPage() {
               onClick={() => {
                 setSelectedTextId(el.id);
                 setSelectedSignatureId(null);
+                setSelectedImageId(null);
               }}
               data-testid={`element-list-text-${el.id}`}
             >
@@ -365,11 +430,31 @@ export default function EditorPage() {
               onClick={() => {
                 setSelectedSignatureId(el.id);
                 setSelectedTextId(null);
+                setSelectedImageId(null);
               }}
               data-testid={`element-list-signature-${el.id}`}
             >
               <Pen className="h-3 w-3" />
               <span className="text-xs">Signature</span>
+            </div>
+          ))}
+          {currentPageImageElements.map((el) => (
+            <div
+              key={el.id}
+              className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
+                selectedImageId === el.id
+                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                  : "hover-elevate"
+              }`}
+              onClick={() => {
+                setSelectedImageId(el.id);
+                setSelectedTextId(null);
+                setSelectedSignatureId(null);
+              }}
+              data-testid={`element-list-image-${el.id}`}
+            >
+              <ImagePlus className="h-3 w-3" />
+              <span className="text-xs">Image</span>
             </div>
           ))}
         </div>
@@ -536,6 +621,7 @@ export default function EditorPage() {
                 onSelect={() => {
                   setSelectedTextId(element.id);
                   setSelectedSignatureId(null);
+                  setSelectedImageId(null);
                 }}
                 onUpdate={(updates) => handleUpdateText(element.id, updates)}
                 onDelete={() => handleDeleteText(element.id)}
@@ -551,11 +637,28 @@ export default function EditorPage() {
                 onSelect={() => {
                   setSelectedSignatureId(element.id);
                   setSelectedTextId(null);
+                  setSelectedImageId(null);
                 }}
                 onUpdate={(updates) =>
                   handleUpdateSignature(element.id, updates)
                 }
                 onDelete={() => handleDeleteSignature(element.id)}
+              />
+            ))}
+
+            {currentPageImageElements.map((element) => (
+              <ImageElement
+                key={element.id}
+                element={element}
+                isSelected={selectedImageId === element.id}
+                scale={effectiveScale}
+                onSelect={() => {
+                  setSelectedImageId(element.id);
+                  setSelectedTextId(null);
+                  setSelectedSignatureId(null);
+                }}
+                onUpdate={(updates) => handleUpdateImage(element.id, updates)}
+                onDelete={() => handleDeleteImage(element.id)}
               />
             ))}
           </div>
@@ -606,6 +709,15 @@ export default function EditorPage() {
                 Sign
               </Button>
 
+              <Button
+                className="flex-1 max-w-32 bg-blue-600 text-white"
+                onClick={() => setShowImageModal(true)}
+                data-testid="button-mobile-add-image"
+              >
+                <ImagePlus className="h-4 w-4 mr-1" />
+                Image
+              </Button>
+
               <Sheet open={showMobileTools} onOpenChange={setShowMobileTools}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" data-testid="button-mobile-tools">
@@ -632,6 +744,12 @@ export default function EditorPage() {
         open={showSignatureModal}
         onClose={() => setShowSignatureModal(false)}
         onSave={handleAddSignature}
+      />
+
+      <ImageModal
+        open={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        onSave={handleAddImage}
       />
 
       <ExportModal

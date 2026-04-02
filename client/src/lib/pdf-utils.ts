@@ -1,6 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument } from 'pdf-lib';
-import type { TextElement, SignatureElement } from '@shared/schema';
+import type { TextElement, SignatureElement, ImageElement } from '@shared/schema';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -139,7 +139,8 @@ async function dataUrlToImageBytes(dataUrl: string): Promise<Uint8Array> {
 export async function exportPdfWithEdits(
   originalFile: File,
   textElements: TextElement[],
-  signatureElements: SignatureElement[]
+  signatureElements: SignatureElement[],
+  imageElements: ImageElement[] = []
 ): Promise<Uint8Array> {
   try {
     const arrayBuffer = await originalFile.arrayBuffer();
@@ -195,6 +196,32 @@ export async function exportPdfWithEdits(
       }
     }
     
+    for (const imgEl of imageElements) {
+      if (imgEl.page <= pages.length) {
+        const page = pages[imgEl.page - 1];
+        const { height: pageHeight } = page.getSize();
+
+        try {
+          const imageBytes = await dataUrlToImageBytes(imgEl.imageData);
+          let embeddedImage;
+          try {
+            embeddedImage = await pdfDoc.embedPng(imageBytes);
+          } catch {
+            embeddedImage = await pdfDoc.embedJpg(imageBytes);
+          }
+
+          page.drawImage(embeddedImage, {
+            x: imgEl.x,
+            y: pageHeight - imgEl.y - imgEl.height,
+            width: imgEl.width,
+            height: imgEl.height,
+          });
+        } catch (err) {
+          console.error('Failed to embed image:', err);
+        }
+      }
+    }
+
     return pdfDoc.save();
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error during PDF export';

@@ -37,6 +37,18 @@ export const signatureElementSchema = z.object({
 
 export type SignatureElement = z.infer<typeof signatureElementSchema>;
 
+export const imageElementSchema = z.object({
+  id: z.string(),
+  imageData: z.string(),   // base64 data URL
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  page: z.number(),
+});
+
+export type ImageElement = z.infer<typeof imageElementSchema>;
+
 export const pdfEditorStateSchema = z.object({
   fileName: z.string(),
   totalPages: z.number(),
@@ -44,6 +56,7 @@ export const pdfEditorStateSchema = z.object({
   zoom: z.number(),
   textElements: z.array(textElementSchema),
   signatureElements: z.array(signatureElementSchema),
+  imageElements: z.array(imageElementSchema),
 });
 
 export type PDFEditorState = z.infer<typeof pdfEditorStateSchema>;
