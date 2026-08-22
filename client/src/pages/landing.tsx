@@ -1,22 +1,31 @@
 import { useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Upload, FileText, Pen, Download, Shield, Zap, ArrowRight } from "lucide-react";
+import { Upload, FileText, Pen, Download, Shield, Zap, ArrowRight, Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { useToast } from "@/hooks/use-toast";
 import { storeFile } from "@/lib/file-store";
+import { detectKind } from "@/lib/document";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = useCallback((file: File) => {
-    if (file && file.type === "application/pdf") {
-      storeFile(file);
-      setLocation("/editor");
+    if (!file) return;
+    if (!detectKind(file)) {
+      toast({
+        title: "Unsupported file",
+        description: "Choose a PDF or an image (PNG, JPEG, WebP, GIF).",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [setLocation]);
+    storeFile(file);
+    setLocation("/editor");
+  }, [setLocation, toast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -44,7 +53,7 @@ export default function LandingPage() {
     {
       icon: Upload,
       title: "Easy Upload",
-      description: "Drag and drop or click to upload any PDF document instantly",
+      description: "Drag and drop any PDF document or image to get started instantly",
     },
     {
       icon: Pen,
@@ -53,13 +62,18 @@ export default function LandingPage() {
     },
     {
       icon: FileText,
-      title: "Insert Text",
-      description: "Add custom text with full control over font, size, and color",
+      title: "Arabic & English Text",
+      description: "Real embedded fonts with correct Arabic shaping, right-to-left layout and bidirectional text",
+    },
+    {
+      icon: Images,
+      title: "PDFs and Images",
+      description: "Sign a contract or a photographed document - the same tools work on both",
     },
     {
       icon: Download,
-      title: "Export PDF",
-      description: "Download your edited PDF with all changes embedded",
+      title: "Sharp Exports",
+      description: "Text stays selectable vector text in PDFs; images export at full resolution",
     },
     {
       icon: Shield,
@@ -79,9 +93,8 @@ export default function LandingPage() {
         <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            <span className="text-xl font-semibold">PDF Editor</span>
+            <span className="text-xl font-semibold">Sign &amp; Edit</span>
           </div>
-          <ThemeToggle />
         </div>
       </header>
 
@@ -94,8 +107,9 @@ export default function LandingPage() {
                 <span className="text-primary">Instantly</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-md">
-                Add your signature and text to any PDF document right in your browser. 
-                No software installation, no account required, completely free.
+                Add your signature and text to any PDF or image, right in your
+                browser. Full Arabic support, no installation, no account, and
+                completely free.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button
@@ -104,7 +118,7 @@ export default function LandingPage() {
                   data-testid="button-upload-hero"
                 >
                   <Upload className="mr-2 h-5 w-5" />
-                  Upload PDF
+                  Upload File
                 </Button>
                 <Button variant="outline" size="lg" asChild>
                   <a href="#features">
@@ -136,10 +150,12 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="text-lg font-medium">
-                    {isDragging ? "Drop your PDF here" : "Drag & drop your PDF"}
+                    {isDragging
+                      ? "Drop your file here"
+                      : "Drag & drop a PDF or image"}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    or click to browse files
+                    PDF, PNG, JPEG, WebP or GIF
                   </p>
                 </div>
                 <Button
@@ -153,7 +169,7 @@ export default function LandingPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept="application/pdf,image/*"
                 className="hidden"
                 onChange={handleInputChange}
                 data-testid="input-file-upload"
@@ -200,7 +216,7 @@ export default function LandingPage() {
               Ready to Get Started?
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Upload your PDF and start editing in seconds. No sign-up required.
+              Upload a PDF or image and start signing in seconds. No sign-up required.
             </p>
             <Button
               size="lg"
@@ -208,7 +224,7 @@ export default function LandingPage() {
               data-testid="button-upload-cta"
             >
               <Upload className="mr-2 h-5 w-5" />
-              Upload Your PDF
+              Upload Your File
             </Button>
           </div>
         </section>
@@ -220,7 +236,7 @@ export default function LandingPage() {
             Your files are processed locally and never uploaded to our servers.
           </p>
           <p className="mt-2">
-            Supports all standard PDF formats.
+            Supports standard PDF files and PNG, JPEG, WebP and GIF images.
           </p>
         </div>
       </footer>

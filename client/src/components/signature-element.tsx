@@ -198,11 +198,14 @@ export function SignatureElement({
       {isSelected && (
         <>
           <button
-            className="absolute -top-3 -right-3 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 z-10"
+            className="absolute -top-4 -right-4 p-2 bg-destructive text-destructive-foreground rounded-full shadow-md hover:bg-destructive/90 z-10 touch-none"
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
+            aria-label="Delete signature"
             data-testid="button-delete-signature"
           >
             <X className="h-4 w-4" />

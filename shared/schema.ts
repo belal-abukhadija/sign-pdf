@@ -20,6 +20,8 @@ export const textElementSchema = z.object({
   fontSize: z.number(),
   fontFamily: z.string(),
   color: z.string(),
+  bold: z.boolean().optional(),
+  direction: z.enum(["auto", "ltr", "rtl"]).optional(),
   page: z.number(),
 });
 
@@ -49,8 +51,12 @@ export const imageElementSchema = z.object({
 
 export type ImageElement = z.infer<typeof imageElementSchema>;
 
+export const documentKindSchema = z.enum(["pdf", "image"]);
+export type DocumentKind = z.infer<typeof documentKindSchema>;
+
 export const pdfEditorStateSchema = z.object({
   fileName: z.string(),
+  kind: documentKindSchema.optional(),
   totalPages: z.number(),
   currentPage: z.number(),
   zoom: z.number(),

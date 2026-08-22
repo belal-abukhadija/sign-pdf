@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Pencil } from "lucide-react";
 import type { TextElement as TextElementType } from "@shared/schema";
+import { LINE_HEIGHT_RATIO } from "@/lib/pdf-utils";
+import { ensurePreviewFont, resolveFontFor } from "@/lib/fonts";
+import { resolveDirection, type TextDirection } from "@/lib/bidi-text";
 
 interface TextElementProps {
   element: TextElementType;
@@ -25,6 +28,8 @@ export function TextElement({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const elementRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const reportedSize = useRef({ width: 0, height: 0 });
 
   useEffect(() => {
     if (!isEditing) {
@@ -116,11 +121,19 @@ export function TextElement({
     }
   }, [isDragging, handleMouseMove, handleTouchMove, handleEnd]);
 
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  const startEditing = useCallback(() => {
+    setIsDragging(false);
     setIsEditing(true);
     setTimeout(() => inputRef.current?.focus(), 0);
   }, []);
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      startEditing();
+    },
+    [startEditing]
+  );
 
   const handleInputBlur = useCallback(() => {
     onUpdate({ content: localContent });
@@ -148,8 +161,57 @@ export function TextElement({
     [localContent, element.content, onUpdate]
   );
 
+  const definition = resolveFontFor(element.content, element.fontFamily);
+  const direction = resolveDirection(
+    element.content,
+    (element.direction as TextDirection) ?? "auto"
+  );
+
+  // Load the exact TTF the exporter will embed, so what is on screen is what
+  // lands in the file.
+  useEffect(() => {
+    void ensurePreviewFont(definition, element.bold === true);
+  }, [definition, element.bold]);
+
   const scaledFontSize = element.fontSize * scale;
   const minTouchTarget = 44;
+
+  // The stored width/height start as guesses. Measuring the rendered text and
+  // writing the real size back keeps the page-bounds clamp honest for long
+  // strings, and gives the element list something accurate to hit-test.
+  useEffect(() => {
+    const span = textRef.current;
+    if (!span || isEditing || scale <= 0) return;
+
+    const measure = () => {
+      const width = span.offsetWidth / scale;
+      const height = span.offsetHeight / scale;
+      if (
+        Math.abs(width - reportedSize.current.width) > 0.5 ||
+        Math.abs(height - reportedSize.current.height) > 0.5
+      ) {
+        reportedSize.current = { width, height };
+        onUpdate({ width, height });
+      }
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(span);
+    return () => observer.disconnect();
+  }, [scale, isEditing, element.content, element.fontSize, element.bold, element.fontFamily, onUpdate]);
+
+  const textStyle: React.CSSProperties = {
+    fontSize: scaledFontSize,
+    fontFamily: definition.cssFamily,
+    fontWeight: element.bold ? 700 : 400,
+    color: element.color,
+    // Matches the half-leading model the PDF exporter reproduces.
+    lineHeight: LINE_HEIGHT_RATIO,
+    direction,
+    unicodeBidi: "plaintext",
+    whiteSpace: "pre",
+  };
 
   return (
     <div
@@ -162,10 +224,6 @@ export function TextElement({
       style={{
         left: element.x * scale,
         top: element.y * scale,
-        minWidth: minTouchTarget,
-        minHeight: minTouchTarget,
-        display: "flex",
-        alignItems: "center",
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
@@ -173,6 +231,15 @@ export function TextElement({
       data-testid={`text-element-${element.id}`}
     >
       <div className="relative group">
+        {/* Invisible pad that guarantees a 44px touch target without changing
+            where the text itself sits. */}
+        {!isEditing && (
+          <span
+            aria-hidden
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ width: minTouchTarget, height: minTouchTarget }}
+          />
+        )}
         {isEditing ? (
           <input
             ref={inputRef}
@@ -181,35 +248,47 @@ export function TextElement({
             onChange={handleInputChange}
             onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
-            className="bg-white dark:bg-gray-900 border-none outline-none touch-auto"
+            className="bg-white border-none outline-none touch-auto"
             style={{
-              fontSize: scaledFontSize,
-              fontFamily: element.fontFamily,
-              color: element.color,
+              ...textStyle,
+              // Never below 16px: iOS Safari zooms the whole page in on focus
+              // for smaller inputs, which throws the editor viewport off.
+              fontSize: Math.max(scaledFontSize, 16),
               minWidth: 80,
             }}
             data-testid="input-text-edit"
           />
         ) : (
-          <span
-            style={{
-              fontSize: scaledFontSize,
-              fontFamily: element.fontFamily,
-              color: element.color,
-              whiteSpace: "nowrap",
-            }}
-          >
+          <span ref={textRef} style={textStyle}>
             {element.content || "Enter text"}
           </span>
         )}
         {isSelected && !isEditing && (
           <>
+            {/* Touch devices have no double-click, so editing needs its own
+                explicit control rather than a hidden gesture. */}
             <button
-              className="absolute -top-3 -right-3 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 z-10"
+              className="absolute -top-4 -left-4 p-2 bg-primary text-primary-foreground rounded-full shadow-md z-10 touch-none"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                startEditing();
+              }}
+              aria-label="Edit text"
+              data-testid="button-edit-text"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              className="absolute -top-4 -right-4 p-2 bg-destructive text-destructive-foreground rounded-full shadow-md hover:bg-destructive/90 z-10 touch-none"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
+              aria-label="Delete text"
               data-testid="button-delete-text"
             >
               <X className="h-4 w-4" />
