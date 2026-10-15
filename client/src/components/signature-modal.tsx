@@ -257,7 +257,7 @@ export function SignatureModal({ open, onClose, onSave }: SignatureModalProps) {
                       aria-label={`Pen color ${color}`}
                       className={`h-9 w-9 rounded-full border-2 transition-transform ${
                         penColor === color
-                          ? "border-primary scale-110"
+                          ? "border-foreground scale-110"
                           : "border-border"
                       }`}
                       style={{ backgroundColor: color }}
@@ -315,7 +315,7 @@ export function SignatureModal({ open, onClose, onSave }: SignatureModalProps) {
                       onClick={() => setSelectedFont(index)}
                       className={`p-3 min-h-14 border rounded-md text-lg truncate transition-all hover-elevate ${
                         selectedFont === index
-                          ? "border-primary bg-primary/5"
+                          ? "border-foreground bg-primary/20"
                           : "border-border"
                       } ${font.className}`}
                       style={{ color: penColor }}

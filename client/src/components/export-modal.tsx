@@ -71,9 +71,9 @@ export function ExportModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isImage ? (
-              <ImageIcon className="h-5 w-5 text-primary" />
+              <ImageIcon className="h-5 w-5 text-foreground" />
             ) : (
-              <FileText className="h-5 w-5 text-primary" />
+              <FileText className="h-5 w-5 text-foreground" />
             )}
             Export {isImage ? "Image" : "PDF"}
           </DialogTitle>

@@ -467,7 +467,7 @@ export default function EditorPage() {
     return (
       <div className="h-[100dvh] flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+          <Loader2 className="h-10 w-10 animate-spin text-foreground mx-auto" />
           <p className="text-muted-foreground">Loading document...</p>
         </div>
       </div>
@@ -516,12 +516,12 @@ export default function EditorPage() {
     <div className="space-y-4">
       {!isMobile && (
         <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          <h3 className="text-sm font-semibold text-foreground">
             Add Elements
           </h3>
           <div className="grid grid-cols-2 gap-2">
             <Button
-              className="h-16 flex-col gap-2 bg-primary/10 hover:bg-primary/20 border-2 border-primary/30 text-primary"
+              className="h-16 flex-col gap-2 rounded-xl"
               variant="outline"
               onClick={handleAddText}
               data-testid="button-add-text"
@@ -530,7 +530,7 @@ export default function EditorPage() {
               <span className="text-xs font-medium">Add Text</span>
             </Button>
             <Button
-              className="h-16 flex-col gap-2 bg-primary/10 hover:bg-primary/20 border-2 border-primary/30 text-primary"
+              className="h-16 flex-col gap-2 rounded-xl"
               variant="outline"
               onClick={() => setShowSignatureModal(true)}
               data-testid="button-add-signature"
@@ -539,7 +539,7 @@ export default function EditorPage() {
               <span className="text-xs font-medium">Add Signature</span>
             </Button>
             <Button
-              className="col-span-2 h-14 flex-col gap-2 bg-blue-500/10 hover:bg-blue-500/20 border-2 border-blue-400/40 text-blue-600"
+              className="col-span-2 h-14 flex-col gap-2 rounded-xl"
               variant="outline"
               onClick={() => setShowImageModal(true)}
               data-testid="button-add-image"
@@ -568,7 +568,7 @@ export default function EditorPage() {
       </Accordion>
 
       <div>
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+        <h3 className="text-sm font-semibold text-foreground mb-2">
           Elements on Page {currentPage}
         </h3>
         <div className="space-y-1">
@@ -582,7 +582,7 @@ export default function EditorPage() {
               key={el.id}
               className={`flex w-full items-center gap-2 p-3 rounded-md text-left transition-colors ${
                 selectedTextId === el.id
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-foreground text-background"
                   : "hover-elevate"
               }`}
               onClick={() => {
@@ -603,7 +603,7 @@ export default function EditorPage() {
               key={el.id}
               className={`flex w-full items-center gap-2 p-3 rounded-md text-left transition-colors ${
                 selectedSignatureId === el.id
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-foreground text-background"
                   : "hover-elevate"
               }`}
               onClick={() => {
@@ -644,7 +644,7 @@ export default function EditorPage() {
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
-      <header className="flex h-14 flex-shrink-0 items-center justify-between gap-2 border-b bg-background px-1 md:px-4">
+      <header className="flex h-16 flex-shrink-0 items-center justify-between gap-2 bg-background px-2 md:px-4">
         <div className="flex items-center gap-1 md:gap-3 min-w-0">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -672,7 +672,7 @@ export default function EditorPage() {
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           {!isMobile && (
             <>
-              <div className="flex items-center gap-1 bg-muted rounded-md p-1">
+              <div className="flex items-center gap-1 bg-secondary rounded-full p-1">
                 {zoomControls}
               </div>
               <Separator orientation="vertical" className="h-6" />
@@ -729,9 +729,9 @@ export default function EditorPage() {
 
       <div className="flex flex-1 overflow-hidden relative">
         {!isMobile && (
-          <aside className="w-72 border-r bg-card flex flex-col">
-            <div className="p-3 border-b">
-              <h2 className="text-sm font-semibold">Tools</h2>
+          <aside className="ml-3 mb-3 w-72 rounded-xl bg-card flex flex-col">
+            <div className="px-4 pt-4 pb-1">
+              <h2 className="text-base font-semibold">Tools</h2>
             </div>
             <ScrollArea className="flex-1 p-3">
               <ToolsContent />
@@ -741,7 +741,7 @@ export default function EditorPage() {
 
         <main
           ref={scrollRef}
-          className="flex-1 overflow-auto overscroll-contain bg-muted/30 p-2 md:p-6"
+          className="flex-1 overflow-auto overscroll-contain bg-background p-2 md:p-6"
           onTouchStart={handlePinchStart}
           onTouchMove={handlePinchMove}
           onTouchEnd={handlePinchEnd}
@@ -817,7 +817,7 @@ export default function EditorPage() {
         </main>
 
         {isMobile && (
-          <div className="pointer-events-none absolute right-2 bottom-3 z-40 flex flex-col items-center rounded-full border bg-background/95 shadow-lg backdrop-blur">
+          <div className="pointer-events-none absolute right-2 bottom-3 z-40 flex flex-col items-center rounded-full bg-card shadow-lg">
             <div className="pointer-events-auto flex flex-col items-center py-1">
               <Button
                 variant="ghost"
@@ -858,7 +858,7 @@ export default function EditorPage() {
       </div>
 
       {isMobile && (
-        <nav className="flex-shrink-0 border-t bg-background pb-[env(safe-area-inset-bottom)]">
+        <nav className="flex-shrink-0 bg-card pb-[env(safe-area-inset-bottom)]">
           <div className="grid grid-cols-4">
             <Button
               variant="ghost"

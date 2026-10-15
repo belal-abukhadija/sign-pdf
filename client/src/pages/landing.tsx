@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
-import { Upload, FileText, Pen, Download, Shield, Zap, ArrowRight, Images } from "lucide-react";
+import { Upload, Pen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { storeFile } from "@/lib/file-store";
 import { detectKind } from "@/lib/document";
@@ -51,194 +50,129 @@ export default function LandingPage() {
 
   const features = [
     {
-      icon: Upload,
-      title: "Easy Upload",
-      description: "Drag and drop any PDF document or image to get started instantly",
+      title: "Sign in three ways",
+      description: "Draw it with a finger or mouse, type it in a handwriting face, or upload a picture of the one you already use.",
     },
     {
-      icon: Pen,
-      title: "Add Signatures",
-      description: "Draw, type, or upload your signature and place it anywhere",
+      title: "Arabic that stays joined",
+      description: "Real embedded fonts with correct Arabic shaping, right-to-left layout and mixed Arabic and English lines.",
     },
     {
-      icon: FileText,
-      title: "Arabic & English Text",
-      description: "Real embedded fonts with correct Arabic shaping, right-to-left layout and bidirectional text",
+      title: "PDFs and photos alike",
+      description: "Sign a contract or a photographed form. The same tools work on both.",
     },
     {
-      icon: Images,
-      title: "PDFs and Images",
-      description: "Sign a contract or a photographed document - the same tools work on both",
+      title: "Sharp exports",
+      description: "Text stays selectable vector text in PDFs, and images export at full resolution.",
     },
     {
-      icon: Download,
-      title: "Sharp Exports",
-      description: "Text stays selectable vector text in PDFs; images export at full resolution",
-    },
-    {
-      icon: Shield,
-      title: "100% Private",
-      description: "All editing happens in your browser. Files never leave your device",
-    },
-    {
-      icon: Zap,
-      title: "Lightning Fast",
-      description: "No server processing required. Instant editing and export",
+      title: "Nothing is uploaded",
+      description: "Editing and exporting happen in your browser. Your files never leave your device.",
     },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
-          <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-primary" />
-            <span className="text-xl font-semibold">Sign &amp; Edit</span>
-          </div>
+      <header className="wb-bar">
+        <a className="wb-brand" href="/">
+          <span className="wb-mark" aria-hidden="true"><Pen /></span>
+          <span className="wb-brand-text">
+            <span className="wb-brand-name">Sign &amp; Edit</span>
+            <span className="wb-brand-owner">Belal&apos;s tools</span>
+          </span>
+        </a>
+        <div className="wb-bar-end">
+          <span className="wb-note hidden sm:inline">Works offline. Nothing is uploaded.</span>
         </div>
       </header>
 
-      <main>
-        <section className="container mx-auto px-4 py-16 lg:py-24">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
-            <div className="space-y-6">
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-                Edit PDFs{" "}
-                <span className="text-primary">Instantly</span>
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-md">
-                Add your signature and text to any PDF or image, right in your
-                browser. Full Arabic support, no installation, no account, and
-                completely free.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Button
-                  size="lg"
-                  onClick={() => fileInputRef.current?.click()}
-                  data-testid="button-upload-hero"
-                >
-                  <Upload className="mr-2 h-5 w-5" />
-                  Upload File
-                </Button>
-                <Button variant="outline" size="lg" asChild>
-                  <a href="#features">
-                    Learn More
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </a>
-                </Button>
-              </div>
-            </div>
-
-            <div
-              className={`relative rounded-md border-2 border-dashed p-8 lg:p-12 transition-all duration-200 ${
-                isDragging
-                  ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-primary/50"
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              data-testid="dropzone-upload"
+      <main className="wb-page">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf,image/*"
+          className="hidden"
+          onChange={handleInputChange}
+          data-testid="input-file-upload"
+        />
+        <section className="grid items-center gap-10 pb-16 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:pb-24 lg:pt-12">
+          <div>
+            <h1
+              className="m-0 font-semibold"
+              style={{ fontSize: "clamp(2.75rem, 1.4rem + 3.6vw, 4.75rem)", lineHeight: 1, letterSpacing: "-0.04em" }}
             >
-              <div className="flex flex-col items-center justify-center text-center space-y-4">
-                <div className={`rounded-full p-4 transition-colors ${
-                  isDragging ? "bg-primary/10" : "bg-muted"
-                }`}>
-                  <Upload className={`h-10 w-10 transition-colors ${
-                    isDragging ? "text-primary" : "text-muted-foreground"
-                  }`} />
-                </div>
-                <div>
-                  <p className="text-lg font-medium">
-                    {isDragging
-                      ? "Drop your file here"
-                      : "Drag & drop a PDF or image"}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    PDF, PNG, JPEG, WebP or GIF
-                  </p>
-                </div>
-                <Button
-                  variant="secondary"
-                  onClick={() => fileInputRef.current?.click()}
-                  data-testid="button-browse-files"
-                >
-                  Browse Files
-                </Button>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf,image/*"
-                className="hidden"
-                onChange={handleInputChange}
-                data-testid="input-file-upload"
-              />
-            </div>
-          </div>
-        </section>
-
-        <section id="features" className="bg-muted/30 py-16 lg:py-24">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Everything You Need
-              </h2>
-              <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
-                A complete PDF editing solution that works entirely in your browser
-              </p>
-            </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => (
-                <Card key={index} className="hover-elevate">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="rounded-md bg-primary/10 p-2.5">
-                        <feature.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{feature.title}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {feature.description}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="container mx-auto px-4 py-16 lg:py-24">
-          <div className="text-center space-y-6">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Ready to Get Started?
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Upload a PDF or image and start signing in seconds. No sign-up required.
+              Sign it without printing it
+            </h1>
+            <p className="wb-lede" style={{ marginTop: "var(--wb-s5)" }}>
+              Add your signature and Arabic or English text to any PDF or photo, right in your browser. No account, no installation, free.
             </p>
-            <Button
-              size="lg"
-              onClick={() => fileInputRef.current?.click()}
-              data-testid="button-upload-cta"
-            >
-              <Upload className="mr-2 h-5 w-5" />
-              Upload Your File
-            </Button>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                onClick={() => fileInputRef.current?.click()}
+                data-testid="button-upload-hero"
+              >
+                <Upload className="h-5 w-5" />
+                Open a file
+              </Button>
+              <Button variant="ghost" size="lg" asChild>
+                <a href="#features">What it can do</a>
+              </Button>
+            </div>
           </div>
+
+          <div
+            className={`wb-drop${isDragging ? " is-over" : ""}`}
+            style={{ minHeight: 360 }}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => fileInputRef.current?.click()}
+            data-testid="dropzone-upload"
+          >
+            <span className="wb-drop-icon"><Upload /></span>
+            <p className="wb-drop-title">
+              {isDragging ? "Drop to open it" : "Drop a PDF or an image here"}
+            </p>
+            <p className="wb-drop-hint">or click to choose. PDF, PNG, JPEG, WebP or GIF.</p>
+          </div>
+        </section>
+
+        <section id="features" className="grid gap-8 py-16 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
+          <h2 className="wb-title" style={{ fontSize: "clamp(1.75rem, 1.2rem + 2vw, 2.5rem)" }}>
+            What it can do
+          </h2>
+          <dl className="m-0 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {features.map((feature) => (
+              <div key={feature.title}>
+                <dt className="wb-h3" style={{ fontSize: "var(--wb-t-lg)" }}>{feature.title}</dt>
+                <dd className="m-0 mt-2 text-muted-foreground">{feature.description}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section className="flex flex-col items-start gap-6 rounded-[var(--wb-r-lg)] p-8 sm:p-12" style={{ background: "var(--wb-ink)", color: "var(--wb-bg)" }}>
+          <h2 className="wb-title" style={{ fontSize: "clamp(1.75rem, 1.2rem + 2vw, 2.5rem)" }}>
+            Signed in under a minute
+          </h2>
+          <p className="m-0 max-w-xl" style={{ opacity: 0.75 }}>
+            Open the file, place your signature, download. No sign-up.
+          </p>
+          <Button
+            size="lg"
+            onClick={() => fileInputRef.current?.click()}
+            data-testid="button-upload-cta"
+          >
+            <Upload className="h-5 w-5" />
+            Open a file
+          </Button>
         </section>
       </main>
 
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>
-            Your files are processed locally and never uploaded to our servers.
-          </p>
-          <p className="mt-2">
-            Supports standard PDF files and PNG, JPEG, WebP and GIF images.
-          </p>
-        </div>
+      <footer className="wb-foot">
+        <span>Made by <a href="mailto:belalabukhadija97@gmail.com">Belal</a></span>
+        <span>More free tools at <a href="https://belal.work" target="_blank" rel="noopener noreferrer">belal.work</a></span>
       </footer>
     </div>
   );
